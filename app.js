@@ -1,21 +1,27 @@
 /* =========================================================
-   SHARED RENDERING LOGIC
-   movies.html + series.html
-   + THE WATCHLIST CINEMA ENGINE
+   THE WATCHLIST — COMPLETE APP.JS
+   ========================================================= */
+
+/* =========================================================
+   GLOBAL SETTINGS
    ========================================================= */
 
 const PAGE_SIZE = 60;
 
 
 /* =========================================================
-   DATE FORMATTER
+   COMMON HELPERS
    ========================================================= */
 
 function fmtDate(d){
 
   if(!d) return "—";
 
-  const [y,m,day] = d.split('-');
+  const parts = String(d).split("-");
+
+  if(parts.length < 3) return d;
+
+  const [y,m,day] = parts;
 
   const months = [
     "Jan","Feb","Mar","Apr",
@@ -23,82 +29,133 @@ function fmtDate(d){
     "Sep","Oct","Nov","Dec"
   ];
 
-  return `${day} ${months[parseInt(m,10)-1]} ${y}`;
+  const month =
+    months[parseInt(m,10)-1] || "";
+
+  return `${day} ${month} ${y}`;
+
+}
+
+
+function safeNumber(value){
+
+  const n = Number(value);
+
+  return Number.isFinite(n) ? n : 0;
+
+}
+
+
+function escapeHTML(value){
+
+  return String(value ?? "")
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+
+}
+
+
+function qs(selector){
+
+  return document.querySelector(selector);
 
 }
 
 
 /* =========================================================
-   CARD
+   MOVIE / SERIES CARD
    ========================================================= */
 
 function cardHTML(item){
 
   const genre =
-    (item.genres || "")
-      .split(',')[0]
+    String(item.genres || "")
+      .split(",")[0]
       ?.trim() || "—";
+
+  const title =
+    escapeHTML(item.title || "Untitled");
+
+  const url =
+    escapeHTML(item.url || "#");
+
+  const year =
+    escapeHTML(item.year || "—");
+
+  const rating =
+    safeNumber(item.yourRating);
+
+  const imdb =
+    item.imdbRating !== undefined &&
+    item.imdbRating !== null &&
+    item.imdbRating !== ""
+      ? escapeHTML(item.imdbRating)
+      : "—";
 
   return `
 
-  <a
-    class="card"
-    href="${item.url}"
-    target="_blank"
-    rel="noopener">
+    <a
+      class="card"
+      href="${url}"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
 
-    <div class="c-top">
+      <div class="c-top">
 
-      <div>
+        <div>
 
-        <div class="c-year">
-          ${item.year || "—"}
+          <div class="c-year">
+            ${year}
+          </div>
+
+        </div>
+
+        <div class="c-rating">
+
+          ${rating || "—"}
+
+          <span class="of10">
+            /10
+          </span>
+
         </div>
 
       </div>
 
-      <div class="c-rating">
+      <div class="c-title">
+        ${title}
+      </div>
 
-        ${item.yourRating}
+      <div class="c-genre">
+        ${escapeHTML(genre)}
+      </div>
 
-        <span class="of10">
-          /10
+      <div class="c-foot">
+
+        <span>
+          Rated ${fmtDate(item.dateRated)}
+        </span>
+
+        <span class="c-imdb">
+          IMDb ${imdb}
         </span>
 
       </div>
 
-    </div>
+    </a>
 
-
-    <div class="c-title">
-      ${item.title}
-    </div>
-
-
-    <div class="c-genre">
-      ${genre}
-    </div>
-
-
-    <div class="c-foot">
-
-      <span>
-        Rated ${fmtDate(item.dateRated)}
-      </span>
-
-      <span class="c-imdb">
-        IMDb ${item.imdbRating ?? "—"}
-      </span>
-
-    </div>
-
-  </a>`;
+  `;
 
 }
 
 
 /* =========================================================
    LIST ENGINE
+   MOVIES.HTML + SERIES.HTML
    ========================================================= */
 
 function initList(
@@ -110,7 +167,31 @@ function initList(
   countEl
 ){
 
-  let filtered = items.slice();
+  /*
+   * Prevent old listeners from stacking if the user
+   * changes language/category multiple times.
+   */
+
+  const newSearch =
+    searchInput.cloneNode(true);
+
+  const newSort =
+    sortSelect.cloneNode(true);
+
+  const newLoad =
+    loadMoreBtn.cloneNode(true);
+
+  searchInput.replaceWith(newSearch);
+  sortSelect.replaceWith(newSort);
+  loadMoreBtn.replaceWith(newLoad);
+
+  searchInput = newSearch;
+  sortSelect = newSort;
+  loadMoreBtn = newLoad;
+
+  let filtered = Array.isArray(items)
+    ? items.slice()
+    : [];
 
   let shown = 0;
 
@@ -120,30 +201,68 @@ function initList(
     const mode =
       sortSelect.value;
 
+
     filtered.sort((a,b)=>{
 
-      if(mode === 'rating-desc')
-        return b.yourRating - a.yourRating;
+      if(mode === "rating-desc"){
+        return (
+          safeNumber(b.yourRating) -
+          safeNumber(a.yourRating)
+        );
+      }
 
-      if(mode === 'rating-asc')
-        return a.yourRating - b.yourRating;
 
-      if(mode === 'year-desc')
-        return (b.year||0) - (a.year||0);
+      if(mode === "rating-asc"){
+        return (
+          safeNumber(a.yourRating) -
+          safeNumber(b.yourRating)
+        );
+      }
 
-      if(mode === 'year-asc')
-        return (a.year||0) - (b.year||0);
 
-      if(mode === 'date-desc')
-        return (b.dateRated||'')
-          .localeCompare(a.dateRated||'');
+      if(mode === "year-desc"){
+        return (
+          safeNumber(b.year) -
+          safeNumber(a.year)
+        );
+      }
 
-      if(mode === 'date-asc')
-        return (a.dateRated||'')
-          .localeCompare(b.dateRated||'');
 
-      if(mode === 'title-asc')
-        return a.title.localeCompare(b.title);
+      if(mode === "year-asc"){
+        return (
+          safeNumber(a.year) -
+          safeNumber(b.year)
+        );
+      }
+
+
+      if(mode === "date-desc"){
+        return String(b.dateRated || "")
+          .localeCompare(
+            String(a.dateRated || "")
+          );
+      }
+
+
+      if(mode === "date-asc"){
+        return String(a.dateRated || "")
+          .localeCompare(
+            String(b.dateRated || "")
+          );
+      }
+
+
+      if(mode === "title-asc"){
+        return String(a.title || "")
+          .localeCompare(
+            String(b.title || ""),
+            undefined,
+            {
+              sensitivity:"base"
+            }
+          );
+      }
+
 
       return 0;
 
@@ -160,54 +279,37 @@ function initList(
         .toLowerCase();
 
 
-    /*
-       Search now checks:
-
-       TITLE
-       GENRE
-       DIRECTOR
-       YEAR
-       IMDb RATING
-    */
-
     filtered =
-      items.filter(it => {
+      items.filter(item => {
 
         if(!q) return true;
 
-        const title =
-          String(it.title || "")
-            .toLowerCase();
 
-        const genres =
-          String(it.genres || "")
-            .toLowerCase();
+        const searchable = [
 
-        const director =
-          String(it.director || "")
-            .toLowerCase();
+          item.title,
 
-        const year =
-          String(it.year || "")
-            .toLowerCase();
+          item.genres,
 
-        const imdb =
-          String(it.imdbRating || "")
-            .toLowerCase();
+          item.director,
+
+          item.year,
+
+          item.imdbRating,
+
+          item.yourRating,
+
+          item.dateRated
+
+        ]
+        .map(value =>
+          String(value ?? "")
+            .toLowerCase()
+        );
 
 
-        return (
-
-          title.includes(q) ||
-
-          genres.includes(q) ||
-
-          director.includes(q) ||
-
-          year.includes(q) ||
-
-          imdb.includes(q)
-
+        return searchable.some(
+          value => value.includes(q)
         );
 
       });
@@ -217,7 +319,7 @@ function initList(
 
     shown = 0;
 
-    grid.innerHTML = '';
+    grid.innerHTML = "";
 
     renderNext();
 
@@ -233,10 +335,16 @@ function initList(
       );
 
 
-    grid.insertAdjacentHTML(
-      'beforeend',
-      next.map(cardHTML).join('')
-    );
+    if(next.length){
+
+      grid.insertAdjacentHTML(
+        "beforeend",
+        next
+          .map(cardHTML)
+          .join("")
+      );
+
+    }
 
 
     shown += next.length;
@@ -244,22 +352,24 @@ function initList(
 
     countEl.textContent =
       `${filtered.length} title${
-        filtered.length===1
-          ? ''
-          : 's'
+        filtered.length === 1
+          ? ""
+          : "s"
       }`;
 
 
     loadMoreBtn.style.display =
       shown < filtered.length
-        ? 'block'
-        : 'none';
+        ? "block"
+        : "none";
 
 
     if(filtered.length === 0){
 
       grid.innerHTML =
-        '<div class="empty-state">No titles match.</div>';
+        `<div class="empty-state">
+          No titles match.
+        </div>`;
 
     }
 
@@ -267,19 +377,19 @@ function initList(
 
 
   searchInput.addEventListener(
-    'input',
+    "input",
     applyFilter
   );
 
 
   sortSelect.addEventListener(
-    'change',
+    "change",
     applyFilter
   );
 
 
   loadMoreBtn.addEventListener(
-    'click',
+    "click",
     renderNext
   );
 
@@ -293,17 +403,27 @@ function initList(
 
 /* =========================================================
    CINEMA ENGINE
-   ONLY RUNS ON index.html
+   ONLY RUNS ON INDEX.HTML
    ========================================================= */
 
 (function CinemaEngine(){
 
-  const isHome =
+  const ratingDistribution =
     document.getElementById(
       "ratingDistribution"
     );
 
-  if(!isHome) return;
+
+  /*
+   * If this element does not exist,
+   * we're on movies.html / series.html.
+   */
+
+  if(!ratingDistribution){
+
+    return;
+
+  }
 
 
   let movieDatabase = [];
@@ -312,70 +432,100 @@ function initList(
 
 
   /* =======================================================
-     HELPERS
+     FETCH JSON
      ======================================================= */
 
-  const qs =
-    selector =>
-      document.querySelector(selector);
+  async function fetchJSON(url){
+
+    const response =
+      await fetch(url, {
+        cache:"no-store"
+      });
 
 
-  const safeNumber =
-    value =>
-      Number(value) || 0;
+    if(!response.ok){
+
+      throw new Error(
+        `${url} returned ${response.status}`
+      );
+
+    }
 
 
-  const escapeHTML =
-    value => {
+    return response.json();
 
-      return String(value ?? "")
-        .replace(/&/g,"&amp;")
-        .replace(/</g,"&lt;")
-        .replace(/>/g,"&gt;")
-        .replace(/"/g,"&quot;")
-        .replace(/'/g,"&#039;");
-
-    };
+  }
 
 
   /* =======================================================
-     FLATTEN MOVIES.JSON
+     FLATTEN MOVIE DATA
      ======================================================= */
 
   function flattenMovieData(data){
 
     const result = [];
 
-    if(!data || typeof data !== "object")
+
+    if(!data || typeof data !== "object"){
+
       return result;
 
-
-    Object.entries(data)
-      .forEach(
-        ([language, titles]) => {
-
-          if(!Array.isArray(titles))
-            return;
+    }
 
 
-          titles.forEach(item => {
+    Object.entries(data).forEach(
+      ([language,titles]) => {
 
-            result.push({
+        if(!Array.isArray(titles)){
 
-              ...item,
+          return;
 
-              language:
-                language
+        }
 
-            });
+
+        titles.forEach(item => {
+
+          result.push({
+
+            ...item,
+
+            language:
+              language
 
           });
 
-        }
-      );
+        });
+
+      }
+    );
 
 
     return result;
+
+  }
+
+
+  /* =======================================================
+     FLATTEN SERIES DATA
+     ======================================================= */
+
+  function flattenSeriesData(data){
+
+    if(Array.isArray(data)){
+
+      return data.slice();
+
+    }
+
+
+    if(data && typeof data === "object"){
+
+      return flattenMovieData(data);
+
+    }
+
+
+    return [];
 
   }
 
@@ -388,74 +538,54 @@ function initList(
 
     try{
 
-      const movieResponse =
-        await fetch("movies.json");
-
       const movieJSON =
-        await movieResponse.json();
+        await fetchJSON("movies.json");
+
 
       movieDatabase =
         flattenMovieData(movieJSON);
 
 
-    }catch(error){
+      console.log(
+        `Loaded ${movieDatabase.length} movies`
+      );
+
+    }
+    catch(error){
 
       console.error(
-        "Could not load movies.json",
+        "Could not load movies.json:",
         error
       );
+
+      movieDatabase = [];
 
     }
 
 
-    /*
-       series.json exists in your repository,
-       so we also calculate the series count.
-    */
-
     try{
 
-      const seriesResponse =
-        await fetch("series.json");
-
       const seriesJSON =
-        await seriesResponse.json();
+        await fetchJSON("series.json");
 
 
-      /*
-         Handles both:
-
-         [
-           {...}
-         ]
-
-         and:
-
-         {
-           "English":[...],
-           "Malayalam":[...]
-         }
-      */
-
-      if(Array.isArray(seriesJSON)){
-
-        seriesDatabase =
-          seriesJSON;
-
-      }else{
-
-        seriesDatabase =
-          flattenMovieData(seriesJSON);
-
-      }
+      seriesDatabase =
+        flattenSeriesData(seriesJSON);
 
 
-    }catch(error){
+      console.log(
+        `Loaded ${seriesDatabase.length} series`
+      );
+
+    }
+    catch(error){
 
       console.warn(
-        "series.json could not be loaded.",
+        "Could not load series.json:",
         error
       );
+
+      seriesDatabase = [];
 
     }
 
@@ -471,11 +601,6 @@ function initList(
 
   function buildBasicStats(){
 
-    const total =
-      movieDatabase.length +
-      seriesDatabase.length;
-
-
     const movieCount =
       movieDatabase.length;
 
@@ -484,15 +609,25 @@ function initList(
       seriesDatabase.length;
 
 
+    const total =
+      movieCount +
+      seriesCount;
+
+
+    const ratings =
+      movieDatabase
+        .map(item =>
+          safeNumber(item.yourRating)
+        )
+        .filter(r => r > 0);
+
+
     const average =
-      movieDatabase.length
-        ? movieDatabase.reduce(
-            (sum,movie) =>
-              sum +
-              safeNumber(movie.yourRating),
+      ratings.length
+        ? ratings.reduce(
+            (a,b) => a+b,
             0
-          ) /
-          movieDatabase.length
+          ) / ratings.length
         : 0;
 
 
@@ -544,7 +679,7 @@ function initList(
 
 
   /* =======================================================
-     ANIMATED COUNTERS
+     ANIMATED NUMBERS
      ======================================================= */
 
   function animateNumber(
@@ -555,7 +690,13 @@ function initList(
     if(!element) return;
 
 
-    const duration = 1300;
+    target =
+      safeNumber(target);
+
+
+    const duration =
+      1300;
+
 
     const start =
       performance.now();
@@ -565,7 +706,7 @@ function initList(
 
       const progress =
         Math.min(
-          (now - start) /
+          (now-start) /
           duration,
           1
         );
@@ -574,7 +715,7 @@ function initList(
       const eased =
         1 -
         Math.pow(
-          1 - progress,
+          1-progress,
           3
         );
 
@@ -614,45 +755,40 @@ function initList(
     const container =
       qs("#ratingDistribution");
 
+
     if(!container) return;
 
 
-    const counts =
-      {};
+    const counts = {};
 
-    for(
-      let rating = 1;
-      rating <= 10;
-      rating++
-    ){
+
+    for(let rating=1;rating<=10;rating++){
 
       counts[rating] = 0;
 
     }
 
 
-    movieDatabase.forEach(
-      movie => {
+    movieDatabase.forEach(movie => {
 
-        const rating =
-          Math.round(
-            safeNumber(
-              movie.yourRating
-            )
-          );
+      const rating =
+        Math.round(
+          safeNumber(
+            movie.yourRating
+          )
+        );
 
 
-        if(
-          rating >= 1 &&
-          rating <= 10
-        ){
+      if(
+        rating >= 1 &&
+        rating <= 10
+      ){
 
-          counts[rating]++;
-
-        }
+        counts[rating]++;
 
       }
-    );
+
+    });
 
 
     const max =
@@ -666,8 +802,8 @@ function initList(
 
 
     for(
-      let rating = 10;
-      rating >= 1;
+      let rating=10;
+      rating>=1;
       rating--
     ){
 
@@ -711,7 +847,7 @@ function initList(
 
 
   /* =======================================================
-     GENERIC BAR BUILDER
+     GENERIC BAR LIST
      ======================================================= */
 
   function buildBarList(
@@ -722,6 +858,7 @@ function initList(
 
     const container =
       qs(containerID);
+
 
     if(!container) return;
 
@@ -738,7 +875,9 @@ function initList(
     if(!sorted.length){
 
       container.innerHTML =
-        "<div class='empty-state'>No data.</div>";
+        `<div class="empty-state">
+          No data.
+        </div>`;
 
       return;
 
@@ -746,7 +885,7 @@ function initList(
 
 
     const max =
-      sorted[0][1];
+      sorted[0][1] || 1;
 
 
     container.innerHTML = "";
@@ -787,6 +926,7 @@ function initList(
           </div>
 
           `
+
         );
 
       }
@@ -804,20 +944,17 @@ function initList(
     const languages = {};
 
 
-    movieDatabase.forEach(
-      movie => {
+    movieDatabase.forEach(movie => {
 
-        const language =
-          movie.language ||
-          "Unknown";
+      const language =
+        movie.language ||
+        "Unknown";
 
 
-        languages[language] =
-          (languages[language] || 0)
-          + 1;
+      languages[language] =
+        (languages[language] || 0) + 1;
 
-      }
-    );
+    });
 
 
     buildBarList(
@@ -838,30 +975,20 @@ function initList(
     const genres = {};
 
 
-    movieDatabase.forEach(
-      movie => {
+    movieDatabase.forEach(movie => {
 
-        String(
-          movie.genres || ""
-        )
+      String(movie.genres || "")
         .split(",")
-        .map(
-          genre =>
-            genre.trim()
-        )
+        .map(g => g.trim())
         .filter(Boolean)
-        .forEach(
-          genre => {
+        .forEach(genre => {
 
-            genres[genre] =
-              (genres[genre] || 0)
-              + 1;
+          genres[genre] =
+            (genres[genre] || 0) + 1;
 
-          }
-        );
+        });
 
-      }
-    );
+    });
 
 
     buildBarList(
@@ -882,48 +1009,39 @@ function initList(
     const directors = {};
 
 
-    movieDatabase.forEach(
-      movie => {
+    movieDatabase.forEach(movie => {
 
-        const names =
-          String(
-            movie.director || ""
-          )
+      const names =
+        String(movie.director || "")
           .split(",")
-          .map(
-            name =>
-              name.trim()
-          )
+          .map(name => name.trim())
           .filter(Boolean);
 
 
-        names.forEach(
-          director => {
+      names.forEach(director => {
 
-            if(!directors[director]){
+        if(!directors[director]){
 
-              directors[director] = {
+          directors[director] = {
 
-                count:0,
-                total:0
+            count:0,
+            total:0
 
-              };
+          };
 
-            }
+        }
 
 
-            directors[director].count++;
+        directors[director].count++;
 
-            directors[director].total +=
-              safeNumber(
-                movie.yourRating
-              );
+        directors[director].total +=
+          safeNumber(
+            movie.yourRating
+          );
 
-          }
-        );
+      });
 
-      }
-    );
+    });
 
 
     const sorted =
@@ -950,8 +1068,10 @@ function initList(
       ([name,data]) => {
 
         const average =
-          data.total /
-          data.count;
+          data.count
+            ? data.total /
+              data.count
+            : 0;
 
 
         container.insertAdjacentHTML(
@@ -965,11 +1085,8 @@ function initList(
             </div>
 
             <div class="director-meta">
-              ${data.count} title${
-                data.count === 1
-                  ? ""
-                  : "s"
-              }
+              ${data.count}
+              title${data.count === 1 ? "" : "s"}
             </div>
 
             <div class="director-rating">
@@ -979,6 +1096,7 @@ function initList(
           </div>
 
           `
+
         );
 
       }
@@ -996,6 +1114,7 @@ function initList(
     const container =
       qs("#ratingPersonality");
 
+
     const description =
       qs("#personalityDescription");
 
@@ -1004,20 +1123,25 @@ function initList(
 
 
     const ratings =
-      movieDatabase.map(
-        movie =>
+      movieDatabase
+        .map(movie =>
           safeNumber(
             movie.yourRating
           )
-      )
-      .filter(
-        rating =>
-          rating > 0
-      );
+        )
+        .filter(
+          rating => rating > 0
+        );
 
 
-    if(!ratings.length)
+    if(!ratings.length){
+
+      container.textContent =
+        "NO DATA";
+
       return;
+
+    }
 
 
     const average =
@@ -1055,41 +1179,36 @@ function initList(
       personality =
         "THE GENEROUS CINEPHILE";
 
+
       text =
         "You are unusually generous with ratings. When a movie works for you, you are very willing to reward it.";
 
     }
-
-    else if(
-      average <= 6
-    ){
+    else if(average <= 6){
 
       personality =
         "THE HARD MARKER";
+
 
       text =
         "Getting a high rating from you actually means something. Your archive has a relatively demanding scoring system.";
 
     }
-
-    else if(
-      high > .25
-    ){
+    else if(high > .25){
 
       personality =
         "THE HYPE BELIEVER";
+
 
       text =
         "You have a substantial collection of 8+ ratings. When cinema hits, you really let it hit.";
 
     }
-
-    else if(
-      low > .25
-    ){
+    else if(low > .25){
 
       personality =
         "THE EXECUTIONER";
+
 
       text =
         "Your archive contains plenty of low scores. You are perfectly comfortable punishing movies that don't work.";
@@ -1101,8 +1220,12 @@ function initList(
       personality;
 
 
-    description.textContent =
-      text;
+    if(description){
+
+      description.textContent =
+        text;
+
+    }
 
   }
 
@@ -1116,40 +1239,47 @@ function initList(
     const container =
       qs("#imdbComparison");
 
+
     if(!container) return;
 
 
     const valid =
-      movieDatabase.filter(
-        movie =>
-          safeNumber(
-            movie.yourRating
-          ) &&
-          safeNumber(
-            movie.imdbRating
-          )
-      );
+      movieDatabase.filter(movie => {
+
+        return (
+          safeNumber(movie.yourRating) > 0 &&
+          safeNumber(movie.imdbRating) > 0
+        );
+
+      });
 
 
-    if(!valid.length) return;
+    if(!valid.length){
+
+      container.innerHTML =
+        `<div class="empty-state">
+          No IMDb comparison data.
+        </div>`;
+
+      return;
+
+    }
 
 
     const differences =
-      valid.map(
-        movie => ({
+      valid.map(movie => ({
 
-          movie,
+        movie,
 
-          difference:
-            safeNumber(
-              movie.yourRating
-            ) -
-            safeNumber(
-              movie.imdbRating
-            )
+        difference:
+          safeNumber(
+            movie.yourRating
+          ) -
+          safeNumber(
+            movie.imdbRating
+          )
 
-        })
-      );
+      }));
 
 
     const averageDifference =
@@ -1181,16 +1311,24 @@ function initList(
         .slice(0,3);
 
 
-    const formatTitles =
-      list =>
-        list
-          .map(
-            item =>
-              `${escapeHTML(
-                item.movie.title
-              )} (${item.difference > 0 ? "+" : ""}${item.difference.toFixed(1)})`
-          )
-          .join("<br>");
+    function formatTitles(list){
+
+      return list
+        .map(item => {
+
+          const difference =
+            item.difference;
+
+
+          return `
+            ${escapeHTML(item.movie.title)}
+            (${difference > 0 ? "+" : ""}${difference.toFixed(1)})
+          `;
+
+        })
+        .join("<br>");
+
+    }
 
 
     container.innerHTML = `
@@ -1202,14 +1340,18 @@ function initList(
         </h4>
 
         <div class="comparison-value">
+
           ${averageDifference >= 0 ? "+" : ""}
           ${averageDifference.toFixed(2)}
+
         </div>
 
         <p>
+
           Compared with IMDb, your ratings are
           ${averageDifference >= 0 ? "higher" : "lower"}
           on average.
+
         </p>
 
       </div>
@@ -1252,8 +1394,7 @@ function initList(
 
   }
 
-
-  /* =======================================================
+ /* =======================================================
      RATING EVOLUTION
      ======================================================= */
 
@@ -1262,31 +1403,877 @@ function initList(
     const container =
       qs("#ratingEvolution");
 
+
     if(!container) return;
 
 
     const years = {};
 
 
-    movieDatabase.forEach(
-      movie => {
+    movieDatabase.forEach(movie => {
 
-        const year =
-          safeNumber(
-            movie.year
-          );
+      const year =
+        parseInt(
+          movie.year,
+          10
+        );
 
-        const rating =
+
+      const rating =
+        safeNumber(
+          movie.yourRating
+        );
+
+
+      if(!year || !rating)
+        return;
+
+
+      if(!years[year]){
+
+        years[year] = {
+
+          total:0,
+          count:0
+
+        };
+
+      }
+
+
+      years[year].total += rating;
+
+      years[year].count++;
+
+    });
+
+
+    const sortedYears =
+      Object.keys(years)
+        .map(Number)
+        .sort((a,b)=>a-b);
+
+
+    if(!sortedYears.length){
+
+      container.innerHTML =
+        `<div class="empty-state">
+          No evolution data.
+        </div>`;
+
+      return;
+
+    }
+
+
+    const maxRating = 10;
+
+
+    container.innerHTML = "";
+
+
+    sortedYears.forEach(year => {
+
+      const average =
+        years[year].total /
+        years[year].count;
+
+
+      const height =
+        Math.max(
+          2,
+          average /
+          maxRating *
+          180
+        );
+
+
+      container.insertAdjacentHTML(
+        "beforeend",
+        `
+
+        <div class="evolution-column">
+
+          <div class="evolution-rating">
+            ${average.toFixed(1)}
+          </div>
+
+          <div
+            class="evolution-bar"
+            style="height:${height}px">
+          </div>
+
+          <div class="evolution-year">
+            ${year}
+          </div>
+
+        </div>
+
+        `
+
+      );
+
+    });
+
+  }
+
+
+  /* =======================================================
+     RECORDS
+     ======================================================= */
+
+  function buildRecords(){
+
+    const container =
+      qs("#recordsList") ||
+      qs("#recordList") ||
+      qs("#records");
+
+
+    if(!container) return;
+
+
+    if(!movieDatabase.length){
+
+      container.innerHTML =
+        `<div class="empty-state">
+          No records available.
+        </div>`;
+
+      return;
+
+    }
+
+
+    const ratings =
+      movieDatabase.filter(
+        movie =>
           safeNumber(
             movie.yourRating
-          );
+          ) > 0
+      );
 
 
-        if(
-          !year ||
-          !rating
+    const highest =
+      [...ratings]
+        .sort(
+          (a,b) =>
+            safeNumber(b.yourRating) -
+            safeNumber(a.yourRating)
+        )[0];
+
+
+    const lowest =
+      [...ratings]
+        .sort(
+          (a,b) =>
+            safeNumber(a.yourRating) -
+            safeNumber(b.yourRating)
+        )[0];
+
+
+    const oldest =
+      [...movieDatabase]
+        .filter(
+          movie =>
+            safeNumber(movie.year)
         )
+        .sort(
+          (a,b) =>
+            safeNumber(a.year) -
+            safeNumber(b.year)
+        )[0];
+
+
+    const newest =
+      [...movieDatabase]
+        .filter(
+          movie =>
+            safeNumber(movie.year)
+        )
+        .sort(
+          (a,b) =>
+            safeNumber(b.year) -
+            safeNumber(a.year)
+        )[0];
+
+
+    const records = [
+
+      {
+        number:
+          highest
+            ? `${highest.yourRating}/10`
+            : "—",
+
+        label:
+          highest
+            ? `Highest Rated · ${highest.title}`
+            : "Highest Rated"
+      },
+
+      {
+        number:
+          lowest
+            ? `${lowest.yourRating}/10`
+            : "—",
+
+        label:
+          lowest
+            ? `Lowest Rated · ${lowest.title}`
+            : "Lowest Rated"
+      },
+
+      {
+        number:
+          oldest
+            ? oldest.year
+            : "—",
+
+        label:
+          oldest
+            ? `Oldest Film · ${oldest.title}`
+            : "Oldest Film"
+      },
+
+      {
+        number:
+          newest
+            ? newest.year
+            : "—",
+
+        label:
+          newest
+            ? `Newest Film · ${newest.title}`
+            : "Newest Film"
+      }
+
+    ];
+
+
+    container.innerHTML =
+      records
+        .map(record => `
+
+          <div class="record-card">
+
+            <span class="record-number">
+              ${escapeHTML(record.number)}
+            </span>
+
+            <span class="record-label">
+              ${escapeHTML(record.label)}
+            </span>
+
+          </div>
+
+        `)
+        .join("");
+
+  }
+
+
+  /* =======================================================
+     TITLE WALL
+     ======================================================= */
+
+  function buildTitleWall(){
+
+    const containers = [
+
+      qs("#titleWall"),
+
+      qs("#topTitles"),
+
+      qs("#highestRatedTitles")
+
+    ];
+
+
+    const container =
+      containers.find(Boolean);
+
+
+    if(!container) return;
+
+
+    const titles =
+      [...movieDatabase]
+        .filter(
+          movie =>
+            safeNumber(
+              movie.yourRating
+            ) > 0
+        )
+        .sort(
+          (a,b) =>
+            safeNumber(b.yourRating) -
+            safeNumber(a.yourRating)
+        )
+        .slice(0,10);
+
+
+    container.innerHTML =
+      titles
+        .map(movie => `
+
+          <a
+            class="title-card"
+            href="${escapeHTML(movie.url || "#")}"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+
+            <div class="title-card-main">
+
+              <div class="title-card-name">
+                ${escapeHTML(movie.title)}
+              </div>
+
+              <div class="title-card-meta">
+
+                ${movie.year || "—"}
+                ·
+                ${escapeHTML(
+                  String(movie.genres || "")
+                    .split(",")[0] || "—"
+                )}
+
+              </div>
+
+            </div>
+
+            <div class="title-card-rating">
+              ${safeNumber(movie.yourRating)}/10
+            </div>
+
+          </a>
+
+        `)
+        .join("");
+
+  }
+
+
+  /* =======================================================
+     HALL OF SHAME
+     ======================================================= */
+
+  function buildHallOfShame(){
+
+    const container =
+      qs("#hallOfShame") ||
+      qs("#shameList");
+
+
+    if(!container) return;
+
+
+    const titles =
+      [...movieDatabase]
+        .filter(
+          movie =>
+            safeNumber(
+              movie.yourRating
+            ) > 0
+        )
+        .sort(
+          (a,b) =>
+            safeNumber(a.yourRating) -
+            safeNumber(b.yourRating)
+        )
+        .slice(0,10);
+
+
+    container.innerHTML =
+      titles
+        .map(movie => `
+
+          <a
+            class="title-card"
+            href="${escapeHTML(movie.url || "#")}"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+
+            <div class="title-card-main">
+
+              <div class="title-card-name">
+                ${escapeHTML(movie.title)}
+              </div>
+
+              <div class="title-card-meta">
+                ${movie.year || "—"}
+              </div>
+
+            </div>
+
+            <div class="title-card-rating">
+              ${safeNumber(movie.yourRating)}/10
+            </div>
+
+          </a>
+
+        `)
+        .join("");
+
+  }
+ /* =======================================================
+     YEAR TIMELINE
+     ======================================================= */
+
+  function buildYearTimeline(){
+
+    const container =
+      qs("#yearTimeline");
+
+
+    if(!container) return;
+
+
+    const years = {};
+
+
+    movieDatabase.forEach(movie => {
+
+      const year =
+        parseInt(
+          movie.year,
+          10
+        );
+
+
+      if(!year) return;
+
+
+      years[year] =
+        (years[year] || 0) + 1;
+
+    });
+
+
+    const sorted =
+      Object.keys(years)
+        .map(Number)
+        .sort((a,b)=>a-b);
+
+
+    if(!sorted.length){
+
+      container.innerHTML =
+        `<div class="empty-state">
+          No year data.
+        </div>`;
+
+      return;
+
+    }
+
+
+    const max =
+      Math.max(
+        ...sorted.map(
+          year => years[year]
+        ),
+        1
+      );
+
+
+    container.innerHTML = "";
+
+
+    sorted.forEach(year => {
+
+      const count =
+        years[year];
+
+
+      const height =
+        Math.max(
+          2,
+          count /
+          max *
+          170
+        );
+
+
+      container.insertAdjacentHTML(
+        "beforeend",
+        `
+
+        <div class="year-item">
+
+          <div class="year-count">
+            ${count}
+          </div>
+
+          <div
+            class="year-bar"
+            style="height:${height}px">
+          </div>
+
+          <div class="year-label">
+            ${year}
+          </div>
+
+        </div>
+
+        `
+
+      );
+
+    });
+
+  }
+
+
+  /* =======================================================
+     RANDOM MOVIE
+     ======================================================= */
+
+  function initRandomMovie(){
+
+    const button =
+      qs("#randomButton");
+
+
+    const result =
+      qs("#randomResult");
+
+
+    if(!button || !result)
+      return;
+
+
+    button.addEventListener(
+      "click",
+      () => {
+
+        if(!movieDatabase.length){
+
+          result.textContent =
+            "NO MOVIES AVAILABLE";
+
           return;
 
+        }
 
-        if(!yea
+
+        const random =
+          movieDatabase[
+            Math.floor(
+              Math.random() *
+              movieDatabase.length
+            )
+          ];
+
+
+        result.innerHTML = `
+
+          <a
+            href="${escapeHTML(random.url || "#")}"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+
+            ${escapeHTML(random.title)}
+
+            <span style="
+              font-family:'Archivo',sans-serif;
+              font-size:.6em;
+              color:#777;
+              margin-left:.5rem;
+            ">
+
+              ${random.year || ""}
+              ·
+              ${safeNumber(random.yourRating)}/10
+
+            </span>
+
+          </a>
+
+        `;
+
+      }
+    );
+
+  }
+
+
+  /* =======================================================
+     ARCHIVE SEARCH
+     ======================================================= */
+
+  function initArchiveSearch(){
+
+    const input =
+      qs("#archiveSearch") ||
+      qs("#homeSearch") ||
+      qs("#searchArchive");
+
+
+    const results =
+      qs("#searchResults");
+
+
+    const count =
+      qs("#searchResultCount");
+
+
+    if(!input || !results)
+      return;
+
+
+    function search(){
+
+      const query =
+        input.value
+          .trim()
+          .toLowerCase();
+
+
+      if(!query){
+
+        results.innerHTML = "";
+
+
+        if(count){
+
+          count.textContent = "";
+
+        }
+
+        return;
+
+      }
+
+
+      const allTitles = [
+
+        ...movieDatabase.map(
+          movie => ({
+            ...movie,
+            type:"Movie"
+          })
+        ),
+
+        ...seriesDatabase.map(
+          series => ({
+            ...series,
+            type:"Series"
+          })
+        )
+
+      ];
+
+
+      const matches =
+        allTitles
+          .filter(item => {
+
+            return [
+
+              item.title,
+              item.genres,
+              item.director,
+              item.year,
+              item.language
+
+            ]
+            .some(value =>
+              String(value ?? "")
+                .toLowerCase()
+                .includes(query)
+            );
+
+          })
+          .slice(0,20);
+
+
+      if(count){
+
+        count.textContent =
+          `${matches.length} result${
+            matches.length === 1
+              ? ""
+              : "s"
+          }`;
+
+      }
+
+
+      if(!matches.length){
+
+        results.innerHTML =
+          `<div class="empty-state">
+            No titles found.
+          </div>`;
+
+        return;
+
+      }
+
+
+      results.innerHTML =
+        matches
+          .map(item => `
+
+            <a
+              class="search-result"
+              href="${escapeHTML(item.url || "#")}"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+
+              <div>
+
+                <div class="search-result-title">
+                  ${escapeHTML(item.title)}
+                </div>
+
+                <div class="search-result-meta">
+
+                  ${item.type}
+                  ·
+                  ${item.year || "—"}
+                  ${item.language
+                    ? ` · ${escapeHTML(item.language)}`
+                    : ""}
+
+                </div>
+
+              </div>
+
+              <div class="search-result-rating">
+                ${safeNumber(item.yourRating)}/10
+              </div>
+
+            </a>
+
+          `)
+          .join("");
+
+    }
+
+
+    input.addEventListener(
+      "input",
+      search
+    );
+
+  }
+
+
+  /* =======================================================
+     CINEMATIC INTRO
+     ======================================================= */
+
+  function initCinemaIntro(){
+
+    const intro =
+      qs("#cinemaIntro");
+
+
+    if(!intro)
+      return;
+
+
+    /*
+     * Prevent the intro from appearing again
+     * during the same browser session.
+     */
+
+    const alreadySeen =
+      sessionStorage.getItem(
+        "watchlistCinemaIntro"
+      );
+
+
+    if(alreadySeen){
+
+      intro.classList.add("hide");
+
+      return;
+
+    }
+
+
+    setTimeout(() => {
+
+      intro.classList.add("hide");
+
+      sessionStorage.setItem(
+        "watchlistCinemaIntro",
+        "1"
+      );
+
+    },2600);
+
+  }
+
+
+  /* =======================================================
+     INITIALIZE DASHBOARD
+     ======================================================= */
+
+  function initializeDashboard(){
+
+    buildBasicStats();
+
+    buildRatingDistribution();
+
+    buildLanguageDNA();
+
+    buildGenreDNA();
+
+    buildDirectors();
+
+    buildRatingPersonality();
+
+    buildIMDbComparison();
+
+    buildRatingEvolution();
+
+    buildRecords();
+
+    buildTitleWall();
+
+    buildHallOfShame();
+
+    buildYearTimeline();
+
+    initRandomMovie();
+
+    initArchiveSearch();
+
+    initCinemaIntro();
+
+  }
+
+
+  /* =======================================================
+     START
+     ======================================================= */
+
+  loadData();
+
+})();
+
+
+/* =========================================================
+   SAFETY:
+   HANDLE MOVIES / SERIES HASH NAVIGATION
+   ========================================================= */
+
+window.addEventListener(
+  "error",
+  event => {
+
+    console.error(
+      "Watchlist error:",
+      event.error || event.message
+    );
+
+  }
+);
