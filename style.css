@@ -1611,3 +1611,20 @@ body::after{
   }
 
 }
+/* =========================================================
+   FIX: CINEMATIC INTRO SCROLL LOCK
+   ========================================================= */
+
+html.intro-active,
+body.intro-active {
+  overflow: hidden !important;
+  height: 100%;
+}
+
+#cinemaIntro {
+  overflow: hidden;
+}
+
+#cinemaIntro.hide {
+  pointer-events: none;
+}
