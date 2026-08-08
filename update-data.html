@@ -23,9 +23,18 @@ button:disabled{ opacity:0.35; cursor:default; }
 .downloads a{ display:block; text-align:center; border:1px solid var(--white); color:var(--white); padding:0.8rem; font-size:0.85rem; letter-spacing:0.05em; text-decoration:none; }
 .downloads a:hover{ background:rgba(255,255,255,0.08); }
 .note{ font-size:0.75rem; color:var(--grey-dim); margin-top:1.5rem; line-height:1.6; border-top:1px solid var(--line); padding-top:1rem; }
+.backnav{ display:flex; gap:1.1rem; margin-bottom:1.5rem; }
+.backnav a{ font-size:0.72rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--grey); border-bottom:1px solid transparent; padding-bottom:2px; }
+.backnav a:hover{ color:var(--white); border-color:var(--white); }
 </style>
 </head>
 <body>
+
+<div class="backnav">
+  <a href="index.html">Home</a>
+  <a href="movies.html">Movies</a>
+  <a href="series.html">Series</a>
+</div>
 
 <h1>UPDATE DATA</h1>
 <div class="sub">Turn a fresh IMDb ratings export into movies.json and series.json for The Watchlist. Runs entirely in your browser — nothing is uploaded anywhere.</div>
