@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Series — The Watchlist</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">THE WATCHLIST<small>Personal IMDb Archive</small></div>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="movies.html">Movies</a>
+    <a href="series.html" class="active">Series</a>
+  </div>
+</div>
+
+<div id="catView">
+  <div class="hero">
+    <span class="eyebrow">354 series</span>
+    <h1>Indian or Other</h1>
+    <p>IMDb doesn't export a director field for most series, so this split is a best-effort title match — a few may need manual correction.</p>
+  </div>
+  <div class="big-tiles" id="catGrid"></div>
+</div>
+
+<div id="listView" style="display:none;">
+  <div class="hero" style="padding:2rem 1.25rem 1.5rem;">
+    <span class="eyebrow" id="listEyebrow">Series</span>
+    <h1 id="listTitle">Category</h1>
+  </div>
+  <div class="toolbar">
+    <input id="searchInput" type="text" placeholder="Search title…">
+    <select id="sortSelect">
+      <option value="date-desc">Recently rated</option>
+      <option value="date-asc">Oldest rated</option>
+      <option value="rating-desc">Highest rating</option>
+      <option value="rating-asc">Lowest rating</option>
+      <option value="year-desc">Newest release</option>
+      <option value="year-asc">Oldest release</option>
+      <option value="title-asc">Title A–Z</option>
+    </select>
+  </div>
+  <div class="result-count" id="resultCount"></div>
+  <div class="card-grid" id="cardGrid"></div>
+  <button class="load-more" id="loadMoreBtn">Load more</button>
+</div>
+
+<footer>Built from a personal IMDb ratings export.</footer>
+
+<script src="app.js"></script>
+<script>
+const CATS = ["Indian","Other"];
+let DATA = {};
+
+async function boot(){
+  DATA = await fetch('series.json').then(r => r.json());
+
+  const catGrid = document.getElementById('catGrid');
+  catGrid.innerHTML = CATS.map(c => `
+    <a class="big-tile" href="#${c}" data-cat="${c}">
+      <span class="bt-num">${(DATA[c]||[]).length}</span>
+      <span class="bt-lab">${c}</span>
+    </a>
+  `).join('');
+
+  catGrid.querySelectorAll('.big-tile').forEach(t => {
+    t.addEventListener('click', e => {
+      e.preventDefault();
+      showList(t.dataset.cat);
+    });
+  });
+
+  if(location.hash){
+    const cat = decodeURIComponent(location.hash.slice(1));
+    if(DATA[cat]) showList(cat);
+  }
+}
+
+function showList(cat){
+  location.hash = cat;
+  document.getElementById('catView').style.display = 'none';
+  document.getElementById('listView').style.display = 'block';
+  document.getElementById('listTitle').textContent = cat;
+  document.getElementById('listEyebrow').textContent = `Series · ${cat}`;
+
+  const grid = document.getElementById('cardGrid');
+  const search = document.getElementById('searchInput');
+  const sort = document.getElementById('sortSelect');
+  const loadMore = document.getElementById('loadMoreBtn');
+  const count = document.getElementById('resultCount');
+  search.value = '';
+  window.scrollTo(0,0);
+
+  initList(DATA[cat] || [], grid, search, sort, loadMore, count);
+}
+
+window.addEventListener('hashchange', () => {
+  if(!location.hash){
+    document.getElementById('listView').style.display = 'none';
+    document.getElementById('catView').style.display = 'block';
+  }
+});
+
+boot();
+</script>
+
+</body>
+</html>

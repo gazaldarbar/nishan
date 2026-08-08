@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Movies — The Watchlist</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">THE WATCHLIST<small>Personal IMDb Archive</small></div>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="movies.html" class="active">Movies</a>
+    <a href="series.html">Series</a>
+  </div>
+</div>
+
+<div id="langView">
+  <div class="hero">
+    <span class="eyebrow">6,349 movies</span>
+    <h1>Pick a language</h1>
+    <p>"Unsorted" holds titles with no confident language match — mostly one-off directors with a single credit in the archive.</p>
+  </div>
+  <div class="tile-grid" id="langGrid"></div>
+</div>
+
+<div id="listView" style="display:none;">
+  <div class="hero" style="padding:2rem 1.25rem 1.5rem;">
+    <span class="eyebrow" id="listEyebrow">Movies</span>
+    <h1 id="listTitle">Language</h1>
+  </div>
+  <div class="toolbar">
+    <input id="searchInput" type="text" placeholder="Search title…">
+    <select id="sortSelect">
+      <option value="date-desc">Recently rated</option>
+      <option value="date-asc">Oldest rated</option>
+      <option value="rating-desc">Highest rating</option>
+      <option value="rating-asc">Lowest rating</option>
+      <option value="year-desc">Newest release</option>
+      <option value="year-asc">Oldest release</option>
+      <option value="title-asc">Title A–Z</option>
+    </select>
+  </div>
+  <div class="result-count" id="resultCount"></div>
+  <div class="card-grid" id="cardGrid"></div>
+  <button class="load-more" id="loadMoreBtn">Load more</button>
+</div>
+
+<footer>Built from a personal IMDb ratings export.</footer>
+
+<script src="app.js"></script>
+<script>
+const LANGS = ["Malayalam","Tamil","Telugu","Hindi","Kannada","English","Korean","Japanese","Spanish",
+               "French","German","Russian","Thai","Marathi","Bengali","Assamese","Iran","Other","Unsorted"];
+
+let DATA = {};
+
+async function boot(){
+  DATA = await fetch('movies.json').then(r => r.json());
+
+  const langGrid = document.getElementById('langGrid');
+  langGrid.innerHTML = LANGS
+    .filter(l => (DATA[l] || []).length > 0)
+    .map(l => `
+      <a class="tile" href="#${encodeURIComponent(l)}" data-lang="${l}">
+        <span class="cbl"></span><span class="cbr"></span>
+        <span class="t-name">${l}</span>
+        <span class="t-count">${DATA[l].length} title${DATA[l].length===1?'':'s'}</span>
+      </a>
+    `).join('');
+
+  langGrid.querySelectorAll('.tile').forEach(t => {
+    t.addEventListener('click', e => {
+      e.preventDefault();
+      showList(t.dataset.lang);
+    });
+  });
+
+  if(location.hash){
+    const lang = decodeURIComponent(location.hash.slice(1));
+    if(DATA[lang]) showList(lang);
+  }
+}
+
+function showList(lang){
+  location.hash = encodeURIComponent(lang);
+  document.getElementById('langView').style.display = 'none';
+  document.getElementById('listView').style.display = 'block';
+  document.getElementById('listTitle').textContent = lang;
+  document.getElementById('listEyebrow').textContent = `Movies · ${lang}`;
+
+  const grid = document.getElementById('cardGrid');
+  const search = document.getElementById('searchInput');
+  const sort = document.getElementById('sortSelect');
+  const loadMore = document.getElementById('loadMoreBtn');
+  const count = document.getElementById('resultCount');
+  search.value = '';
+  window.scrollTo(0,0);
+
+  initList(DATA[lang] || [], grid, search, sort, loadMore, count);
+}
+
+window.addEventListener('hashchange', () => {
+  if(!location.hash){
+    document.getElementById('listView').style.display = 'none';
+    document.getElementById('langView').style.display = 'block';
+  }
+});
+
+boot();
+</script>
+
+</body>
+</html>
