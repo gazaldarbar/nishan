@@ -108,83 +108,66 @@ function qs(selector){
 function cardHTML(item){
 
   const genre =
-    String(item.genres || "")
-      .split(",")[0]
+    (item.genres || "")
+      .split(',')[0]
       ?.trim() || "—";
 
-  const title =
-    escapeHTML(item.title || "Untitled");
-
-  const url =
-    escapeHTML(item.url || "#");
-
-  const year =
-    escapeHTML(item.year || "—");
-
-  const rating =
-    safeNumber(item.yourRating);
-
-  const imdb =
-    item.imdbRating !== undefined &&
-    item.imdbRating !== null &&
-    item.imdbRating !== ""
-      ? escapeHTML(item.imdbRating)
-      : "—";
+  const titleKey = encodeURIComponent(item.title || "");
 
   return `
 
-    <a
-      class="card"
-      href="${url}"
-      target="_blank"
-      rel="noopener noreferrer"
-    >
+  <div class="card">
 
-      <div class="c-top">
+    <div class="c-top">
 
-        <div>
+      <div>
 
-          <div class="c-year">
-            ${year}
-          </div>
-
-        </div>
-
-        <div class="c-rating">
-
-          ${rating || "—"}
-
-          <span class="of10">
-            /10
-          </span>
-
+        <div class="c-year">
+          ${item.year || "—"}
         </div>
 
       </div>
 
-      <div class="c-title">
-        ${title}
+      <div class="c-rating">
+        ${item.yourRating}
+        <span class="of10">/10</span>
       </div>
 
-      <div class="c-genre">
-        ${escapeHTML(genre)}
-      </div>
+    </div>
 
-      <div class="c-foot">
+    <div class="c-title">
+      <a
+        href="${item.url}"
+        target="_blank"
+        rel="noopener">
+        ${item.title}
+      </a>
+    </div>
 
-        <span>
-          Rated ${fmtDate(item.dateRated)}
-        </span>
+    <div class="c-genre">
+      ${genre}
+    </div>
 
-        <span class="c-imdb">
-          IMDb ${imdb}
-        </span>
+    <div class="c-foot">
 
-      </div>
+      <span>
+        Rated ${fmtDate(item.dateRated)}
+      </span>
 
-    </a>
+      <span class="c-imdb">
+        IMDb ${item.imdbRating ?? "—"}
+      </span>
 
-  `;
+    </div>
+
+    <button
+      class="edit-category-btn"
+      type="button"
+      data-title="${titleKey}">
+      EDIT LANGUAGE
+    </button>
+
+  </div>`;
 
 }
 
