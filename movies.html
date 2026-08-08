@@ -58,6 +58,50 @@ const LANGS = ["Malayalam","Tamil","Telugu","Hindi","Kannada","English","Korean"
 
 let DATA = {};
 
+  function applyMovieLanguageOverrides(){
+
+  let overrides = {};
+
+  try{
+
+    overrides =
+      JSON.parse(
+        localStorage.getItem(
+          "watchlist_movie_language_overrides"
+        ) || "{}"
+      );
+
+  }catch(e){
+
+    overrides = {};
+
+  }
+
+  if(!Object.keys(overrides).length)
+    return;
+
+  const rebuilt = {};
+
+  Object.keys(DATA).forEach(lang => {
+
+    (DATA[lang] || []).forEach(movie => {
+
+      const newLanguage =
+        overrides[movie.title] || lang;
+
+      if(!rebuilt[newLanguage])
+        rebuilt[newLanguage] = [];
+
+      rebuilt[newLanguage].push(movie);
+
+    });
+
+  });
+
+  DATA = rebuilt;
+
+  }
+  
 async function boot(){
   DATA = await fetch('movies.json').then(r => r.json());
 
