@@ -3,39 +3,689 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>The Watchlist — Nishan's IMDb Archive</title>
+
 <link rel="stylesheet" href="style.css">
+
 </head>
+
 <body>
 
-<div class="topbar">
-  <div class="brand">THE WATCHLIST<small>Personal IMDb Archive</small></div>
-  <div class="nav-links">
-    <a href="index.html" class="active">Home</a>
-    <a href="movies.html">Movies</a>
-    <a href="series.html">Series</a>
-    <a href="update-data.html">Update</a>
+<!-- =====================================================
+     CINEMATIC INTRO
+     ===================================================== -->
+
+<div id="cinemaIntro">
+
+  <div class="intro-content">
+
+    <div class="intro-kicker">
+      A PERSONAL CINEMA ARCHIVE
+    </div>
+
+    <div class="intro-title">
+      THE WATCHLIST
+    </div>
+
+    <div class="intro-line"></div>
+
+    <div class="intro-sub">
+      NISHAN · 2016 — 2026
+    </div>
+
   </div>
+
 </div>
 
-<div class="hero">
-  <span class="eyebrow">6,767 titles · 2016 – 2026</span>
-  <h1>Every film. Every rating.<br>Sorted properly.</h1>
-  <p>A personal ratings archive, organized by language and category — no algorithm, no recommendations, just the record.</p>
+
+<!-- =====================================================
+     TOP BAR
+     ===================================================== -->
+
+<div class="topbar">
+
+  <div class="brand">
+    THE WATCHLIST
+    <small>Personal IMDb Archive</small>
+  </div>
+
+  <div class="nav-links">
+
+    <a href="index.html" class="active">
+      Home
+    </a>
+
+    <a href="movies.html">
+      Movies
+    </a>
+
+    <a href="series.html">
+      Series
+    </a>
+
+    <a href="update-data.html">
+      Update
+    </a>
+
+  </div>
+
 </div>
 
-<div class="big-tiles">
+
+<!-- =====================================================
+     HERO
+     ===================================================== -->
+
+<section class="hero cinematic-hero">
+
+  <span class="eyebrow">
+    PERSONAL IMDb ARCHIVE
+  </span>
+
+  <h1>
+    Every film.<br>
+    Every rating.<br>
+    Every opinion.
+  </h1>
+
+  <p>
+    A decade of cinema, recorded one rating at a time.
+    No algorithm. No recommendations. Just your history.
+  </p>
+
+</section>
+
+
+<!-- =====================================================
+     LIVE ARCHIVE STATS
+     ===================================================== -->
+
+<section class="archive-stats">
+
+  <div class="stat-card">
+
+    <span class="stat-number" id="totalTitles">
+      —
+    </span>
+
+    <span class="stat-label">
+      Total Titles
+    </span>
+
+  </div>
+
+
+  <div class="stat-card">
+
+    <span class="stat-number" id="movieCount">
+      —
+    </span>
+
+    <span class="stat-label">
+      Movies
+    </span>
+
+  </div>
+
+
+  <div class="stat-card">
+
+    <span class="stat-number" id="seriesCount">
+      —
+    </span>
+
+    <span class="stat-label">
+      Series
+    </span>
+
+  </div>
+
+
+  <div class="stat-card">
+
+    <span class="stat-number" id="averageRating">
+      —
+    </span>
+
+    <span class="stat-label">
+      Average Rating
+    </span>
+
+  </div>
+
+</section>
+
+
+<!-- =====================================================
+     QUICK NAVIGATION
+     ===================================================== -->
+
+<section class="big-tiles cinematic-tiles">
+
   <a class="big-tile" href="movies.html">
-    <span class="bt-num">6,349</span>
-    <span class="bt-lab">Movies</span>
-  </a>
-  <a class="big-tile" href="series.html">
-    <span class="bt-num">354</span>
-    <span class="bt-lab">Series</span>
-  </a>
-</div>
 
-<footer>Built from a personal IMDb ratings export.</footer>
+    <span class="bt-num" id="movieTileCount">
+      —
+    </span>
+
+    <span class="bt-lab">
+      Explore Movies
+    </span>
+
+  </a>
+
+
+  <a class="big-tile" href="series.html">
+
+    <span class="bt-num" id="seriesTileCount">
+      —
+    </span>
+
+    <span class="bt-lab">
+      Explore Series
+    </span>
+
+  </a>
+
+</section>
+
+
+<!-- =====================================================
+     CINEMA DASHBOARD
+     ===================================================== -->
+
+<main class="cinema-dashboard">
+
+  <div class="dashboard-heading">
+
+    <span class="section-kicker">
+      THE DATA BEHIND THE WATCHLIST
+    </span>
+
+    <h2>
+      Your cinema,<br>
+      <span>decoded.</span>
+    </h2>
+
+    <p>
+      Ten years of ratings turned into a personal cinema profile.
+    </p>
+
+  </div>
+
+
+  <!-- ===================================================
+       RATING DISTRIBUTION
+       =================================================== -->
+
+  <section class="dashboard-panel">
+
+    <div class="panel-heading">
+
+      <div>
+        <span class="panel-kicker">
+          01 · RATINGS
+        </span>
+
+        <h3>
+          How harsh are you?
+        </h3>
+      </div>
+
+      <span class="panel-note">
+        YOUR RATINGS
+      </span>
+
+    </div>
+
+    <div
+      id="ratingDistribution"
+      class="rating-chart">
+    </div>
+
+  </section>
+
+
+  <!-- ===================================================
+       LANGUAGE DNA
+       =================================================== -->
+
+  <section class="dashboard-panel">
+
+    <div class="panel-heading">
+
+      <div>
+
+        <span class="panel-kicker">
+          02 · LANGUAGE
+        </span>
+
+        <h3>
+          Your Cinema DNA
+        </h3>
+
+      </div>
+
+      <span class="panel-note">
+        LANGUAGES
+      </span>
+
+    </div>
+
+    <div
+      id="languageDNA"
+      class="bar-list">
+    </div>
+
+  </section>
+
+
+  <!-- ===================================================
+       GENRE DNA
+       =================================================== -->
+
+  <section class="dashboard-panel">
+
+    <div class="panel-heading">
+
+      <div>
+
+        <span class="panel-kicker">
+          03 · GENRES
+        </span>
+
+        <h3>
+          What keeps pulling you back?
+        </h3>
+
+      </div>
+
+      <span class="panel-note">
+        GENRES
+      </span>
+
+    </div>
+
+    <div
+      id="genreDNA"
+      class="bar-list">
+    </div>
+
+  </section>
+
+
+  <!-- ===================================================
+       DIRECTORS
+       =================================================== -->
+
+  <section class="dashboard-panel">
+
+    <div class="panel-heading">
+
+      <div>
+
+        <span class="panel-kicker">
+          04 · DIRECTORS
+        </span>
+
+        <h3>
+          Directors in your orbit
+        </h3>
+
+      </div>
+
+      <span class="panel-note">
+        MOST WATCHED
+      </span>
+
+    </div>
+
+    <div
+      id="directorList"
+      class="director-grid">
+    </div>
+
+  </section>
+
+
+  <!-- ===================================================
+       RATING PERSONALITY
+       =================================================== -->
+
+  <section class="personality-panel">
+
+    <span class="panel-kicker">
+      05 · YOUR RATING PERSONALITY
+    </span>
+
+    <div id="ratingPersonality">
+      Calculating your cinema personality…
+    </div>
+
+    <p id="personalityDescription">
+    </p>
+
+  </section>
+
+
+  <!-- ===================================================
+       IMDb VS NISHAN
+       =================================================== -->
+
+  <section class="dashboard-panel">
+
+    <div class="panel-heading">
+
+      <div>
+
+        <span class="panel-kicker">
+          06 · IMDb VS YOU
+        </span>
+
+        <h3>
+          You disagree with IMDb.
+        </h3>
+
+      </div>
+
+    </div>
+
+    <div
+      id="imdbComparison"
+      class="comparison-grid">
+    </div>
+
+  </section>
+
+
+  <!-- ===================================================
+       RATING EVOLUTION
+       =================================================== -->
+
+  <section class="dashboard-panel">
+
+    <div class="panel-heading">
+
+      <div>
+
+        <span class="panel-kicker">
+          07 · TIME
+        </span>
+
+        <h3>
+          Your rating evolution
+        </h3>
+
+      </div>
+
+    </div>
+
+    <div
+      id="ratingEvolution"
+      class="evolution-chart">
+    </div>
+
+  </section>
+
+
+  <!-- ===================================================
+       CINEMA RECORDS
+       =================================================== -->
+
+  <section class="records-grid">
+
+
+    <div class="record-card">
+
+      <span class="record-number"
+            id="highestRatedCount">
+        —
+      </span>
+
+      <span class="record-label">
+        Titles rated 10/10
+      </span>
+
+    </div>
+
+
+    <div class="record-card">
+
+      <span class="record-number"
+            id="lowestRatedTitle">
+        —
+      </span>
+
+      <span class="record-label">
+        Lowest rated
+      </span>
+
+    </div>
+
+
+    <div class="record-card">
+
+      <span class="record-number"
+            id="biggestIMDbLove">
+        —
+      </span>
+
+      <span class="record-label">
+        Biggest IMDb disagreement
+      </span>
+
+    </div>
+
+
+    <div class="record-card">
+
+      <span class="record-number"
+            id="mostActiveYear">
+        —
+      </span>
+
+      <span class="record-label">
+        Most active year
+      </span>
+
+    </div>
+
+
+  </section>
+
+
+  <!-- ===================================================
+       HALL OF FAME
+       =================================================== -->
+
+  <section class="dashboard-panel">
+
+    <div class="panel-heading">
+
+      <div>
+
+        <span class="panel-kicker">
+          08 · HALL OF FAME
+        </span>
+
+        <h3>
+          The ones that survived your standards.
+        </h3>
+
+      </div>
+
+    </div>
+
+    <div
+      id="hallOfFame"
+      class="title-wall">
+    </div>
+
+  </section>
+
+
+  <!-- ===================================================
+       HALL OF SHAME
+       =================================================== -->
+
+  <section class="dashboard-panel shame-panel">
+
+    <div class="panel-heading">
+
+      <div>
+
+        <span class="panel-kicker">
+          09 · HALL OF SHAME
+        </span>
+
+        <h3>
+          IMDb said one thing. You said absolutely not.
+        </h3>
+
+      </div>
+
+    </div>
+
+    <div
+      id="hallOfShame"
+      class="title-wall">
+    </div>
+
+  </section>
+
+
+  <!-- ===================================================
+       TIMELINE
+       =================================================== -->
+
+  <section class="dashboard-panel">
+
+    <div class="panel-heading">
+
+      <div>
+
+        <span class="panel-kicker">
+          10 · TIMELINE
+        </span>
+
+        <h3>
+          A decade of watching.
+        </h3>
+
+      </div>
+
+    </div>
+
+    <div
+      id="yearTimeline"
+      class="year-timeline">
+    </div>
+
+  </section>
+
+
+  <!-- ===================================================
+       RANDOM PICK
+       =================================================== -->
+
+  <section class="random-section">
+
+    <span class="section-kicker">
+      YOUR ARCHIVE. YOUR LOTTERY.
+    </span>
+
+    <h2>
+      Don't know what to watch?
+    </h2>
+
+    <p>
+      Pick something you've already seen.
+    </p>
+
+    <button
+      id="randomButton"
+      class="random-button">
+      🎲 SURPRISE ME
+    </button>
+
+    <div
+      id="randomResult"
+      class="random-result">
+    </div>
+
+  </section>
+
+
+  <!-- ===================================================
+       SEARCH YOUR ENTIRE ARCHIVE
+       =================================================== -->
+
+  <section class="archive-search">
+
+    <span class="section-kicker">
+      11 · ARCHIVE SEARCH
+    </span>
+
+    <h2>
+      Find anything.
+    </h2>
+
+    <p>
+      Search across your movie archive by title, director,
+      genre or year.
+    </p>
+
+    <div class="home-search">
+
+      <input
+        id="archiveSearch"
+        type="search"
+        placeholder="Search your archive…">
+
+      <span id="searchResultCount">
+        —
+      </span>
+
+    </div>
+
+    <div
+      id="searchResults"
+      class="search-results">
+    </div>
+
+  </section>
+
+
+</main>
+
+
+<!-- =====================================================
+     FOOTER
+     ===================================================== -->
+
+<footer>
+
+  <div class="footer-title">
+    THE WATCHLIST
+  </div>
+
+  <div>
+    Built from a personal IMDb ratings export.
+  </div>
+
+  <div class="footer-small">
+    No algorithm. No recommendations. Just the record.
+  </div>
+
+</footer>
+
+
+<!-- =====================================================
+     JAVASCRIPT
+     ===================================================== -->
+
+<script src="app.js"></script>
 
 </body>
 </html>
