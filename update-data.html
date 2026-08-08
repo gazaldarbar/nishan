@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Update Data — The Watchlist</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Archivo:wght@400;500;600&display=swap');
+:root{ --bg:#0a0a0a; --bg-raised:#141414; --line:#2c2c2c; --line-bright:#565656; --white:#f4f4f2; --grey:#9a9a96; --grey-dim:#6b6b68; }
+*{box-sizing:border-box;}
+body{ background:var(--bg); color:var(--white); font-family:'Archivo',sans-serif; margin:0; padding:1.5rem 1.25rem 4rem; max-width:600px; margin:0 auto; }
+h1{ font-family:'Bebas Neue',sans-serif; font-size:2rem; letter-spacing:0.02em; margin-bottom:0.2rem; }
+.sub{ color:var(--grey); font-size:0.85rem; margin-bottom:2rem; line-height:1.5; }
+.step{ border:1px solid var(--line-bright); padding:1.2rem; margin-bottom:1rem; background:linear-gradient(160deg, rgba(255,255,255,0.04), transparent 60%); }
+.step h2{ font-family:'Bebas Neue',sans-serif; font-size:1.1rem; letter-spacing:0.04em; margin:0 0 0.6rem; }
+.step p{ font-size:0.82rem; color:var(--grey); line-height:1.5; margin:0.3rem 0 0.8rem; }
+input[type="file"]{ width:100%; font-size:0.82rem; color:var(--grey); background:var(--bg-raised); border:1px solid var(--line-bright); padding:0.6rem; }
+button{ background:transparent; border:1px solid var(--line-bright); color:var(--white); font-family:'Archivo',sans-serif; font-size:0.8rem; letter-spacing:0.08em; text-transform:uppercase; padding:0.7rem 1.4rem; cursor:pointer; margin-top:0.6rem; }
+button:hover{ border-color:var(--white); background:rgba(255,255,255,0.06); }
+button:disabled{ opacity:0.35; cursor:default; }
+.status{ font-size:0.78rem; color:var(--grey-dim); margin-top:0.8rem; white-space:pre-line; line-height:1.6; }
+.downloads{ display:none; margin-top:1rem; gap:0.6rem; flex-direction:column; }
+.downloads a{ display:block; text-align:center; border:1px solid var(--white); color:var(--white); padding:0.8rem; font-size:0.85rem; letter-spacing:0.05em; text-decoration:none; }
+.downloads a:hover{ background:rgba(255,255,255,0.08); }
+.note{ font-size:0.75rem; color:var(--grey-dim); margin-top:1.5rem; line-height:1.6; border-top:1px solid var(--line); padding-top:1rem; }
+</style>
+</head>
+<body>
+
+<h1>UPDATE DATA</h1>
+<div class="sub">Turn a fresh IMDb ratings export into movies.json and series.json for The Watchlist. Runs entirely in your browser — nothing is uploaded anywhere.</div>
+
+<div class="step">
+  <h2>1. Your new IMDb CSV</h2>
+  <p>Export your full ratings from IMDb (Your Ratings → Export). It's cumulative, so this one file replaces the old data completely.</p>
+  <input type="file" id="csvFile" accept=".csv">
+</div>
+
+<div class="step">
+  <h2>2. Corrections file (optional)</h2>
+  <p>If you hand-corrected any titles in your repo before, upload your existing <code>overrides.json</code> here so those corrections survive this update. Skip this the first time — the tool will hand you a blank one to download instead.</p>
+  <input type="file" id="overridesFile" accept=".json">
+</div>
+
+<button id="genBtn" disabled>Generate</button>
+<div class="status" id="status"></div>
+
+<div class="downloads" id="downloads">
+  <a id="dlMovies" download="movies.json">Download movies.json</a>
+  <a id="dlSeries" download="series.json">Download series.json</a>
+  <a id="dlOverrides" download="overrides.json">Download overrides.json (template)</a>
+</div>
+
+<div class="note">
+  <b>Every month:</b> get your new CSV from IMDb → run it through this page → replace <code>movies.json</code> and <code>series.json</code> in your GitHub repo (Add file → Upload files → same filenames → commit). That's it, no code involved.
+  <br><br>
+  <b>Fixing a wrong category:</b> instead of editing the big JSON files by hand, edit <code>overrides.json</code> — it's a short file. Add a line like <code>"Some Movie Title": "Tamil"</code> under <code>"movies"</code>, or under <code>"series"</code> for series (using <code>"Indian"</code> or <code>"Other"</code>). Upload that same overrides.json back into step 2 next time you regenerate, and your fix will always be applied automatically, even after future CSV updates.
+</div>
+
+<script>
+const LANG_DIRECTORS = {"Malayalam": ["Priyadarshan", "Sathyan Anthikad", "Kamal", "Joshiy", "Bharathan", "Sibi Malayil", "I.V. Sasi", "Shaji Kailas", "Vinayan", "Rajasenan", "Lal Jose", "Fazil", "Nisar", "Viji Thampi", "Jayaraj", "Thulasidas", "Jeethu Joseph", "Ranjith", "P. Padmarajan", "P.G. Viswambharan", "K. Madhu", "V.K. Prakash", "Shafi", "K.G. George", "Anil,Babu Pisharadi", "K.K. Haridas", "Ranjith Sankar", "M. Padmakumar", "Aashiq Abu", "Rosshan Andrrews", "B. Unnikrishnan", "T.K. Rajeev Kumar", "Vysakh", "Adoor Gopalakrishnan", "A.K. Lohithadas", "V.M. Vinu", "Shyamaprasad", "Lijo Jose Pellissery", "Johny Antony", "Siddique", "Meccartin,Raffi", "Bhadran", "T.S. Suresh Babu", "Venu Nagavalli", "Thaha", "Amal Neerad", "Govindan Aravindan", "Jose Thomas", "Midhun Manuel Thomas", "Blessy", "Thampi Kannanthanam", "Major Ravi", "Ramasimhan", "Omar Lulu", "Abrid Shine", "Harikumar", "Boban Samuel", "Sundardas", "Jis Joy", "Sasi Shankar", "Jeo Baby", "Kannan Thamarakkulam", "Aku Akbar", "Sugeeth", "Saji Surendran", "Mohan", "T. Rajeevnath", "Balu Kiriyath", "K.S. Sethumadhavan", "Ratheesh Balakrishnan Poduval", "Mahesh Narayanan", "Krishand", "T. Hariharan", "T.V. Chandran", "Shajoon Kariyal", "G. Marthandan", "Khalid Rahman", "M. Mohanan", "A.K. Sajan", "Rajeev Ravi", "Jibu Jacob", "Nadirsha", "Lal,Siddique", "Anwar Rasheed", "Deepu Karunakaran", "Kaladharan", "Balachandra Menon", "Bipin Prabhakar", "Rajiv Anchal", "Sandhya Mohan", "Ranjan Pramod", "Rahul Sadasivan", "Rahul Riji Nair", "Thomas K. Sebastian", "Girish A.D.", "Don Palathara", "Sooraj Tom", "Salim Ahmed", "Leo Thaddeus", "Anjali Menon", "Aneesh Anwar", "Rajesh Pillai", "Sidhartha Siva", "Babu Raaj", "Lal", "Martin Prakkat", "Anil Radhakrishnan Menon", "Shaji N. Karun", "Sasi", "P.K. Joseph", "M. Mani", "Sajan", "P. Anil", "Suresh Vinu", "Chidambaram", "Johnpaul George", "Kukku Surendran", "G.S. Vijayan", "Venugopan", "G. Prajith", "Lijin Jose", "Haridas", "Dennis Joseph", "Dinjith Ayyathan", "Prathap Pothen", "Senna Hegde", "Shanavas K. Bavakutty", "Sajid Yahiya", "Sreejith Vijayan", "Vineeth Kumar", "Prasobh Vijayan", "Sidharth Bharathan", "Tinu Pappachan", "Raffi", "Ashraf Hamza", "Alphonse Puthren", "Madhupal", "Baburaj", "Basil Joseph", "Prajesh Sen", "Vipin Atley", "Jude Anthany Joseph", "Anil", "Sunil Ibrahim", "Deepan", "Pappan,Pramod", "S.L. Puram Jayasurya", "Binu Sadanandan", "Jean Paul Lal", "Rohith V.S.", "Suraj", "Sameer Thahir", "Vipin Das", "Vineeth Sreenivasan", "Prithviraj Sukumaran", "Anwar Rasheed", "Aashiq Abu", "Sidney Sibi Malayil"], "Tamil": ["Mani Ratnam", "Shankar Shanmugham", "Gautham Vasudev Menon", "A.R. Murugadoss", "Venkat Prabhu", "Pandiraaj", "A.L. Vijay", "Bala", "Vetrimaaran", "Pa. Ranjith", "Sasikumar", "K. Selvaraghavan", "K.V. Anand", "Suseenthiran", "Karthik Subbaraj", "Mysskin", "Suresh Krishna", "Mohan Raja", "Sundar C.", "Dhanush", "R.S. Durai Senthilkumar", "Vignesh Shivan", "Mari Selvaraj", "S.U. Arun Kumar", "Shakti Soundar Rajan", "Lokesh Kanagaraj", "Nalan Kumarasamy", "Balaji Tharaneetharan", "Nelson Dilipkumar", "M. Muthaiah", "Balaji Mohan", "Ponram", "Magizh Thirumeni", "T.J. Gnanavel", "Ranjit Jeyakodi", "Arun Matheswaran", "Adhik Ravichandran", "Arun Vaiga", "Vasanthabalan", "Chimbudeven", "N. Linguswamy", "H. Vinoth", "Rathna Kumar", "Karthick Naren", "Sudha Kongara", "K. Balachander", "R. Sukumaran", "K. Selva Bharathy", "A. Venkatesh", "Gokul", "Rajiv Menon", "Hari", "Balu Mahendra", "Arun Prabhu Purushothaman", "M. Manikandan", "Suraj", "Vikram K. Kumar", "K. Selvaraghavan,D. Prabakaran", "S.A. Chandrashekhar", "Prabhu Deva", "Kamal Haasan", "Rajesh M. Selva", "Simhaa"], "Telugu": ["S.S. Rajamouli", "Sukumar", "Trivikram Srinivas", "Puri Jagannadh", "Koratala Siva", "Surender Reddy", "Prasanth Varma", "Vamshi Paidipally", "Boyapati Srinu", "Gunasekhar", "Sekhar Kammula", "Singeetam Srinivasa Rao", "Bommarillu Baskar", "Sailesh Kolanu", "K.S. Ravikumar"], "Kannada": ["Prashanth Neel", "Rishab Shetty"], "Hindi": ["Imtiaz Ali", "Sanjay Leela Bhansali", "Anurag Kashyap", "Rajkumar Hirani", "Shoojit Sircar", "Aanand L. Rai", "Siddharth Anand", "Mohit Suri", "Ashutosh Gowariker", "Ayan Mukerji", "Farhan Akhtar", "Karan Johar", "Neeraj Pandey", "Anurag Basu", "Vikramaditya Motwane", "Rajkumar Santoshi", "Maneesh Sharma", "R Balki", "Vikas Bahl", "Vishal Bhardwaj", "Nishikant Kamat", "Yash Chopra", "Hrishikesh Mukherjee", "Sujoy Ghosh", "Shimit Amin", "Abhishek Kapoor", "Dibakar Banerjee", "Rakeysh Omprakash Mehra", "Aditya Chopra", "Zoya Akhtar", "Sriram Raghavan", "Rakesh Roshan", "Ashwiny Iyer Tiwari", "Aditya Dhar", "Homi Adajania", "Farah Khan", "Mira Nair", "Aditya Sarpotdar", "Sandeep Reddy Vanga", "Anubhav Sinha", "Remo D'Souza", "Zoya Akhtar,Dibakar Banerjee,Karan Johar,Anurag Kashyap"], "Korean": ["Kim Ki-duk", "Park Chan-wook", "Bong Joon Ho", "Yeon Sang-ho", "Jung Byung-gil"], "Japanese": ["Akira Kurosawa", "Hayao Miyazaki", "Junji Shimizu", "Haruo Sotozaki"], "Iran": ["Abbas Kiarostami", "Majid Majidi", "Jafar Panahi", "Asghar Farhadi"], "Spanish": ["Pedro Almodóvar", "Alejandro G. Iñárritu", "Alfonso Cuarón", "J.A. Bayona"], "French": ["Luc Besson", "Jean-Pierre Jeunet", "Jacques Tati", "Jacques Audiard", "Julia Ducournau", "Olivier Megaton"], "German": ["Wolfgang Petersen", "Fritz Lang", "Michael Haneke", "Wim Wenders"], "Russian": ["Andrei Tarkovsky", "Timur Bekmambetov"], "Thai": ["Apichatpong Weerasethakul"], "Bengali": ["Satyajit Ray"], "English": ["Steven Spielberg", "Martin Scorsese", "Tim Burton", "Ridley Scott", "Alfred Hitchcock", "Michael Bay", "M. Night Shyamalan", "Christopher Nolan", "Ron Howard", "Wes Anderson", "Stanley Kubrick", "Ingmar Bergman", "Zack Snyder", "David Fincher", "Lars von Trier", "Guy Ritchie", "Quentin Tarantino", "Denis Villeneuve", "David Lynch", "Robert Zemeckis", "Clint Eastwood", "Paul Thomas Anderson", "James Wan", "Robert Rodriguez", "Terrence Malick", "Peter Jackson", "James Mangold", "Jon Favreau", "Sam Raimi", "James Cameron", "Danny Boyle", "Todd Phillips", "Doug Liman", "Darren Aronofsky", "Joel Coen,Ethan Coen", "Ethan Coen,Joel Coen", "Roland Emmerich", "Paul W.S. Anderson", "Richard Linklater", "Dennis Dugan", "George Miller", "Adam McKay", "Yorgos Lanthimos", "Guillermo del Toro", "Shawn Levy", "John Carpenter", "David Yates", "Bryan Singer", "Charles Chaplin", "Sam Mendes", "Brett Ratner", "Antoine Fuqua", "Gore Verbinski", "Frank Coraci", "James Gunn", "Richard Donner", "Jay Roach", "Edgar Wright", "Taika Waititi", "Francis Lawrence", "Chris Columbus", "Spike Lee", "Louis Leterrier", "Billy Wilder", "Michael Mann", "Tony Scott", "Sylvester Stallone", "Paul Greengrass", "Steven Brill", "Lana Wachowski,Lilly Wachowski", "Francis Ford Coppola", "George Lucas", "Rob Reiner", "Rian Johnson", "Eli Roth", "Mel Gibson", "Scott Derrickson", "Steven Soderbergh", "Matthew Vaughn", "J.J. Abrams", "McG", "Wes Craven", "Barry Sonnenfeld", "Justin Lin", "Rawson Marshall Thurber", "Craig Gillespie", "Bill Condon", "Marc Webb", "Edward Zwick", "David O. Russell", "Ryan Coogler", "Matt Bettinelli-Olpin,Tyler Gillett", "Phil Lord,Christopher Miller", "Paul Feig", "Jake Kasdan", "Tim Story", "Jon M. Chu", "Matt Reeves", "Ruben Fleischer", "Noah Baumbach", "Kevin Smith", "David F. Sandberg", "Mike Flanagan", "Christopher McQuarrie", "Joseph Kosinski", "Anthony Russo,Joe Russo", "Brian De Palma", "David Leitch", "Brad Bird", "Ben Stiller", "David Cronenberg", "Ang Lee", "John Glen", "Sergio Leone", "Jaume Collet-Serra", "Woody Allen", "Marc Forster", "F. Gary Gray", "Jon Turteltaub", "David Lowery", "Patrick Hughes", "Isaac Florentine", "John McTiernan", "Sean Anders", "Peter Segal", "Jon Watts", "Tom Shadyac", "Damien Chazelle", "Ari Aster", "Alexandre Aja", "Neill Blomkamp", "Judd Apatow", "Christopher Landon", "Kathryn Bigelow", "Shane Black", "Wes Ball", "Alex Garland", "David Zucker", "Gareth Edwards", "David Ayer", "Robert Eggers", "Fede Alvarez", "David Gordon Green", "Gil Kenan", "Chad Stahelski", "Peyton Reed", "Martin McDonagh", "John Hughes", "Michelangelo Antonioni", "Darren Lynn Bousman", "David R. Ellis", "Guy Hamilton", "Oliver Stone", "Joel Schumacher", "Federico Fellini", "Sidney Lumet", "Joe Johnston", "Cameron Crowe", "Baltasar Kormákur", "Mark Neveldine,Brian Taylor", "Jeff Wadlow", "Michael Sarnoski", "Mike Nichols", "Mike Mills", "Tom Hooper", "Barry Jenkins", "Robert Schwentke", "Andrew Niccol", "Bobby Farrelly,Peter Farrelly", "Jason Reitman", "John Woo", "Joe Dante", "John Landis", "Gareth Evans", "Ben Wheatley", "John G. Avildsen", "Peter Farrelly", "Dean DeBlois", "Tim Hill", "Ric Roman Waugh", "Nia DaCosta", "Wolfgang Petersen", "Chloé Zhao", "Luke Greenfield", "Mike Mitchell", "Vincenzo Natali", "Greg McLean", "Osgood Perkins", "Brad Peyton", "Dan Trachtenberg", "Derek Cianfrance", "Jonathan Levine", "Will Gluck", "Larry Charles", "Carlos Saldanha", "Leigh Whannell", "Timo Tjahjanto", "Gavin O'Connor", "Ilya Naishuller", "Ti West", "Sean Baker", "Jason Friedberg,Aaron Seltzer", "Jeff Fowler", "Damien Leone", "Patty Jenkins", "Jan de Bont", "Adam Wingard", "Neil Burger", "Kevin Greutert", "Keenen Ivory Wayans", "Tom Six", "Andy Muschietti", "Jordan Peele", "Andrew Dominik", "William Wyler", "Genndy Tartakovsky", "Tom McGrath", "Marcus Nispel", "James Foley", "Lewis Gilbert", "Rob Marshall", "Leigh Janiak", "Martin Campbell", "David Lean", "Simon West", "Spike Jonze", "Ben Affleck", "Steve Miner", "James DeMonaco", "John Ford", "Terry Jones", "Terence Young", "Peter Berg", "Frank Darabont", "John Singleton", "Duncan Jones", "Frank Capra", "Roman Polanski", "Jim Sheridan", "Krzysztof Kieślowski"]};
+const INDIAN_SERIES = new Set(["Afsos", "Akkara Kazhchakal", "Alma Matters: Inside the IIT Dream", "Aspirants", "Asur: Welcome to Your Dark Side", "Betaal", "Breathe", "Breathe: Into the Shadows", "Delhi Crime", "Diabolical", "Ekaki", "Farzi", "Feels Like Ishq", "Ghoul", "Grahan", "Guns & Gulaabs", "Heeramandi", "House of Secrets: The Burari Deaths", "If Wishes Could Kill", "Inspection Bungalow", "JL50", "Jai Mahendran", "Kaakee Circus", "Kaattaan", "Kasargod Embassy", "Katla", "Kerala Crime Files", "Kota Factory", "Kudi Yedamaithe", "Kurukshetra", "Leila", "Live Telecast", "Love Under Construction", "Made in Heaven", "Maharani", "Man vs Baby", "Manorathangal", "Master Peace", "Mirzapur", "Modern Love Chennai", "Nagendran's Honeymoons", "Navarasa", "November Story", "OK Computer", "Off Campus", "Paatal Lok", "Paava Kadhaigal", "Panchayat", "Perilloor Premier League", "Pettaikali", "Pharma", "Poacher", "Ponies", "Putham Pudhu Kaalai: Vidiyaadha", "Raakh", "Rooster", "Sacred Games", "Sapne Vs Everyone", "Scam 1992: The Harshad Mehta Story", "Scam 2003 - The Telgi Story", "Secret Stories: Roslin", "Soul Stories", "Special OPS", "Steal", "Suzhal - the Vortex", "TVF Pitchers", "The Ba***Ds of Bollywood", "The Chronicles of the 4.5 Gang", "The Family Man", "The Wonderfools", "Vella Raja", "X-Ray: Selected Satyajit Shorts", "Yeh Meri Family"]);
+const LANG_ORDER = ["Malayalam","Tamil","Telugu","Kannada","Hindi","Korean","Japanese","Iran","Spanish","French","German","Russian","Thai","Bengali","English"];
+const INDIAN_LANG_SET = new Set(["Malayalam","Tamil","Telugu","Kannada","Hindi","Marathi","Bengali","Assamese"]);
+
+const D2L = {};
+for(const lang of LANG_ORDER){
+  for(const name of LANG_DIRECTORS[lang]){ D2L[name] = lang; }
+}
+
+let csvText = null, overridesData = {movies:{}, series:{}};
+
+document.getElementById('csvFile').addEventListener('change', e => {
+  const f = e.target.files[0];
+  if(!f) return;
+  const reader = new FileReader();
+  reader.onload = ev => { csvText = ev.target.result; checkReady(); };
+  reader.readAsText(f);
+});
+
+document.getElementById('overridesFile').addEventListener('change', e => {
+  const f = e.target.files[0];
+  if(!f) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try{
+      overridesData = JSON.parse(ev.target.result);
+      if(!overridesData.movies) overridesData.movies = {};
+      if(!overridesData.series) overridesData.series = {};
+    }catch(err){ alert('Could not read that overrides.json — check it is valid JSON.'); }
+  };
+  reader.readAsText(f);
+});
+
+function checkReady(){
+  document.getElementById('genBtn').disabled = !csvText;
+}
+
+// Minimal RFC4180-ish CSV parser (handles quoted fields with commas/newlines)
+function parseCSV(text){
+  const rows = [];
+  let row = [], field = '', inQuotes = false;
+  for(let i = 0; i < text.length; i++){
+    const c = text[i], next = text[i+1];
+    if(inQuotes){
+      if(c === '"' && next === '"'){ field += '"'; i++; }
+      else if(c === '"'){ inQuotes = false; }
+      else{ field += c; }
+    } else {
+      if(c === '"'){ inQuotes = true; }
+      else if(c === ','){ row.push(field); field = ''; }
+      else if(c === '\r'){ /* skip */ }
+      else if(c === '\n'){ row.push(field); rows.push(row); row = []; field = ''; }
+      else{ field += c; }
+    }
+  }
+  if(field.length || row.length){ row.push(field); rows.push(row); }
+  return rows;
+}
+
+function classifyMovieDirectors(directors){
+  if(!directors) return "Unsorted";
+  if(D2L[directors]) return D2L[directors];
+  const parts = directors.split(',').map(s => s.trim());
+  const votes = {};
+  for(const p of parts){
+    if(D2L[p]){ votes[D2L[p]] = (votes[D2L[p]]||0) + 1; }
+  }
+  let best = null, bestCount = 0;
+  for(const k in votes){ if(votes[k] > bestCount){ best = k; bestCount = votes[k]; } }
+  return best || "Unsorted";
+}
+
+function classifySeriesTitle(title){
+  return INDIAN_SERIES.has(title) ? "Indian" : "Other";
+}
+
+document.getElementById('genBtn').addEventListener('click', () => {
+  const statusEl = document.getElementById('status');
+  statusEl.textContent = 'Parsing…';
+
+  const rows = parseCSV(csvText);
+  const header = rows[0];
+  const idx = name => header.indexOf(name);
+
+  const iTitle = idx('Title'), iType = idx('Title Type'), iYear = idx('Year'),
+        iRelease = idx('Release Date'), iDateRated = idx('Date Rated'),
+        iYourRating = idx('Your Rating'), iImdbRating = idx('IMDb Rating'),
+        iGenres = idx('Genres'), iDirectors = idx('Directors'), iURL = idx('URL');
+
+  const movies = {}, series = {};
+  let movieCount = 0, seriesCount = 0;
+
+  for(let r = 1; r < rows.length; r++){
+    const row = rows[r];
+    if(row.length < 2 || !row[iTitle]) continue;
+    const type = row[iType];
+    const obj = {
+      title: row[iTitle],
+      year: row[iYear] ? parseInt(row[iYear], 10) : null,
+      releaseDate: row[iRelease] || null,
+      dateRated: row[iDateRated] || null,
+      yourRating: parseInt(row[iYourRating], 10),
+      imdbRating: row[iImdbRating] ? parseFloat(row[iImdbRating]) : null,
+      genres: row[iGenres] || "",
+      director: row[iDirectors] || "",
+      url: row[iURL] || ""
+    };
+
+    if(type === 'Movie'){
+      movieCount++;
+      let lang = overridesData.movies[obj.title] || classifyMovieDirectors(obj.director);
+      if(!movies[lang]) movies[lang] = [];
+      movies[lang].push(obj);
+    } else if(type === 'TV Series' || type === 'TV Mini Series'){
+      seriesCount++;
+      let cat = overridesData.series[obj.title] || classifySeriesTitle(obj.title);
+      if(!series[cat]) series[cat] = [];
+      series[cat].push(obj);
+    }
+  }
+
+  const movieBlob = new Blob([JSON.stringify(movies)], {type:'application/json'});
+  const seriesBlob = new Blob([JSON.stringify(series)], {type:'application/json'});
+  const overridesBlob = new Blob([JSON.stringify(overridesData, null, 2)], {type:'application/json'});
+
+  document.getElementById('dlMovies').href = URL.createObjectURL(movieBlob);
+  document.getElementById('dlSeries').href = URL.createObjectURL(seriesBlob);
+  document.getElementById('dlOverrides').href = URL.createObjectURL(overridesBlob);
+  document.getElementById('downloads').style.display = 'flex';
+
+  const langSummary = Object.keys(movies).sort((a,b)=>movies[b].length-movies[a].length)
+    .map(k => `  ${k}: ${movies[k].length}`).join('\n');
+  const seriesSummary = Object.keys(series).map(k => `  ${k}: ${series[k].length}`).join('\n');
+
+  statusEl.textContent = `Done. ${movieCount} movies, ${seriesCount} series.\n\nMovies by language:\n${langSummary}\n\nSeries:\n${seriesSummary}\n\nDownload the files below and upload them to your repo.`;
+});
+</script>
+
+</body>
+</html>
