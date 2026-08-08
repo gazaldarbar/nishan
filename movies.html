@@ -61,6 +61,8 @@ let DATA = {};
 async function boot(){
   DATA = await fetch('movies.json').then(r => r.json());
 
+applyMovieLanguageOverrides();
+
   const langGrid = document.getElementById('langGrid');
   langGrid.innerHTML = LANGS
     .filter(l => (DATA[l] || []).length > 0)
