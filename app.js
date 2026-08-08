@@ -2165,100 +2165,52 @@ function initList(
   }
 
 
-  /* =========================================================
-   CINEMATIC INTRO
-   ========================================================= */
+ /* =======================================================
+     CINEMATIC INTRO
+     ======================================================= */
 
-#cinemaIntro{
-  position:fixed;
-  inset:0;
-  z-index:9999;
+  function initCinemaIntro(){
 
-  background:#070707;
+    const intro =
+      qs("#cinemaIntro");
 
-  display:flex;
-  align-items:center;
-  justify-content:center;
 
-  transition:
-    opacity 1s ease,
-    visibility 1s ease;
+    if(!intro)
+      return;
 
-  /* FIX: prevent anything inside intro from scrolling */
-  overflow:hidden;
-}
 
-#cinemaIntro.hide{
-  opacity:0;
-  visibility:hidden;
-  pointer-events:none;
-}
+    /*
+     * Prevent the intro from appearing again
+     * during the same browser session.
+     */
 
-.intro-content{
-  text-align:center;
-  animation:introRise 1.4s ease forwards;
-}
+    const alreadySeen =
+      sessionStorage.getItem(
+        "watchlistCinemaIntro"
+      );
 
-.intro-kicker{
-  font-size:.62rem;
-  letter-spacing:.35em;
-  color:#6b6b68;
-  margin-bottom:1.4rem;
-}
 
-.intro-title{
-  font-family:'Bebas Neue',sans-serif;
-  font-size:clamp(3.5rem,12vw,8rem);
-  letter-spacing:.03em;
-  line-height:.9;
-}
+    if(alreadySeen){
 
-.intro-line{
-  width:0;
-  height:1px;
-  background:#fff;
-  margin:1.8rem auto;
-  animation:introLine 1.2s 1s forwards;
-}
+      intro.classList.add("hide");
 
-.intro-sub{
-  font-size:.6rem;
-  letter-spacing:.3em;
-  color:#6b6b68;
-}
+      return;
 
-@keyframes introRise{
+    }
 
-  from{
-    opacity:0;
-    transform:translateY(25px);
+
+    setTimeout(() => {
+
+      intro.classList.add("hide");
+
+      sessionStorage.setItem(
+        "watchlistCinemaIntro",
+        "1"
+      );
+
+    },2600);
+
   }
-
-  to{
-    opacity:1;
-    transform:translateY(0);
-  }
-
-}
-
-@keyframes introLine{
-
-  to{
-    width:150px;
-  }
-
-}
-
-
-/* =========================================================
-   FIX: CINEMATIC INTRO SCROLL LOCK
-   ========================================================= */
-
-html.intro-active,
-body.intro-active{
-  overflow:hidden !important;
-  height:100%;
-}
 
   /* =======================================================
      INITIALIZE DASHBOARD
