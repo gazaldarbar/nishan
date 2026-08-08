@@ -171,7 +171,234 @@ function cardHTML(item){
 
 }
 
+/* =========================================================
+   MOVIE LANGUAGE EDITOR
+   ========================================================= */
 
+const EDIT_LANGUAGES = [
+  "Malayalam",
+  "Tamil",
+  "Telugu",
+  "Hindi",
+  "Kannada",
+  "English",
+  "Korean",
+  "Japanese",
+  "Spanish",
+  "French",
+  "German",
+  "Russian",
+  "Thai",
+  "Marathi",
+  "Bengali",
+  "Assamese",
+  "Iran",
+  "Other",
+  "Unsorted"
+];
+
+const MOVIE_OVERRIDES_KEY =
+  "watchlist_movie_language_overrides";
+
+
+function getMovieOverrides(){
+
+  try{
+
+    return JSON.parse(
+      localStorage.getItem(
+        MOVIE_OVERRIDES_KEY
+      ) || "{}"
+    );
+
+  }catch(e){
+
+    return {};
+
+  }
+
+}
+
+
+function saveMovieOverride(title, language){
+
+  const overrides =
+    getMovieOverrides();
+
+  overrides[title] = language;
+
+  localStorage.setItem(
+    MOVIE_OVERRIDES_KEY,
+    JSON.stringify(overrides)
+  );
+
+}
+
+
+/* =========================================================
+   EDIT BUTTON CLICK
+   ========================================================= */
+
+document.addEventListener("click", function(e){
+
+  const button =
+    e.target.closest(
+      ".edit-category-btn"
+    );
+
+  if(!button) return;
+
+  e.preventDefault();
+  e.stopPropagation();
+
+  const title =
+    decodeURIComponent(
+      button.dataset.title
+    );
+
+  openLanguageEditor(title);
+
+});
+
+
+/* =========================================================
+   LANGUAGE EDITOR
+   ========================================================= */
+
+function openLanguageEditor(title){
+
+  const existing =
+    document.getElementById(
+      "languageEditorModal"
+    );
+
+  if(existing)
+    existing.remove();
+
+
+  const currentOverrides =
+    getMovieOverrides();
+
+  const currentLanguage =
+    currentOverrides[title] ||
+    "Unsorted";
+
+
+  const modal =
+    document.createElement("div");
+
+  modal.id =
+    "languageEditorModal";
+
+  modal.innerHTML = `
+
+    <div class="language-editor-backdrop">
+
+      <div class="language-editor-box">
+
+        <div class="language-editor-title">
+          MOVE MOVIE
+        </div>
+
+        <div class="language-editor-movie">
+          ${escapeEditorHTML(title)}
+        </div>
+
+        <label>
+          Language category
+        </label>
+
+        <select id="languageEditorSelect">
+
+          ${EDIT_LANGUAGES.map(
+            lang => `
+              <option
+                value="${lang}"
+                ${lang === currentLanguage
+                  ? "selected"
+                  : ""}>
+                ${lang}
+              </option>
+            `
+          ).join("")}
+
+        </select>
+
+        <div class="language-editor-buttons">
+
+          <button
+            type="button"
+            id="languageEditorCancel">
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            id="languageEditorSave">
+            Save
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  `;
+
+  document.body.appendChild(modal);
+
+
+  document
+    .getElementById(
+      "languageEditorCancel"
+    )
+    .onclick = () => {
+
+      modal.remove();
+
+    };
+
+
+  document
+    .getElementById(
+      "languageEditorSave"
+    )
+    .onclick = () => {
+
+      const language =
+        document
+          .getElementById(
+            "languageEditorSelect"
+          )
+          .value;
+
+      saveMovieOverride(
+        title,
+        language
+      );
+
+      modal.remove();
+
+      alert(
+        `"${title}" moved to ${language}.\n\nRefresh the page to see the change.`
+      );
+
+    };
+
+}
+
+
+function escapeEditorHTML(value){
+
+  return String(value ?? "")
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+
+}
 /* =========================================================
    LIST ENGINE
    MOVIES.HTML + SERIES.HTML
