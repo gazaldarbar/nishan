@@ -7,6 +7,42 @@
    ========================================================= */
 
 const PAGE_SIZE = 60;
+/* =========================================================
+   CINEMATIC INTRO — SCROLL LOCK
+   ========================================================= */
+
+(function initCinemaIntro(){
+
+  const intro = document.getElementById("cinemaIntro");
+
+  if(!intro) return;
+
+  // Prevent the homepage from scrolling underneath the intro
+  document.documentElement.classList.add("intro-active");
+  document.body.classList.add("intro-active");
+
+  // Always start at the top
+  window.scrollTo(0, 0);
+
+  // Keep intro visible for the opening animation
+  setTimeout(() => {
+
+    intro.classList.add("hide");
+
+    // Wait until the fade-out has finished
+    setTimeout(() => {
+
+      document.documentElement.classList.remove("intro-active");
+      document.body.classList.remove("intro-active");
+
+      // Make absolutely sure the homepage starts at the top
+      window.scrollTo(0, 0);
+
+    }, 1000);
+
+  }, 2500);
+
+})();
 
 
 /* =========================================================
