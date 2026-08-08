@@ -2522,3 +2522,73 @@ window.addEventListener(
 
   }
 );
+
+/* =========================================================
+   EXPORT MOVIE LANGUAGE CORRECTIONS
+   ========================================================= */
+
+function exportMovieCorrections(){
+
+  const movieOverrides =
+    getMovieOverrides();
+
+  const overrides = {
+    movies: movieOverrides,
+    series: {}
+  };
+
+  const blob = new Blob(
+    [
+      JSON.stringify(
+        overrides,
+        null,
+        2
+      )
+    ],
+    {
+      type: "application/json"
+    }
+  );
+
+  const url =
+    URL.createObjectURL(blob);
+
+  const a =
+    document.createElement("a");
+
+  a.href = url;
+  a.download = "overrides.json";
+
+  document.body.appendChild(a);
+
+  a.click();
+
+  a.remove();
+
+  URL.revokeObjectURL(url);
+
+}
+
+
+/* =========================================================
+   EXPORT BUTTON
+   ========================================================= */
+
+document.addEventListener(
+  "DOMContentLoaded",
+  function(){
+
+    const button =
+      document.getElementById(
+        "exportCorrectionsBtn"
+      );
+
+    if(!button) return;
+
+    button.addEventListener(
+      "click",
+      exportMovieCorrections
+    );
+
+  }
+);
