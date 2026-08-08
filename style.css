@@ -1710,3 +1710,21 @@ body.intro-active {
   flex:1;
   margin-top:0;
 }
+
+#exportCorrectionsBtn{
+  width:100%;
+  margin-top:0.7rem;
+  padding:0.7rem 1rem;
+  background:transparent;
+  border:1px solid var(--line-bright);
+  color:var(--white);
+  cursor:pointer;
+  text-transform:uppercase;
+  letter-spacing:0.08em;
+  font-size:0.72rem;
+}
+
+#exportCorrectionsBtn:hover{
+  border-color:var(--white);
+  background:rgba(255,255,255,0.06);
+}
